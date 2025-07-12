@@ -19,13 +19,14 @@ const EditProfile = () => {
   const { user, setUser } = useUser();
 
   const [form, setForm] = useState({
-    profilePhoto: null,
+    picture: null,
     name: "",
     email: "",
     username: "",
     portfolioLink: "",
     githubLink: "",
     linkedinLink: "",
+    visibility: "public",
     skillsProficientAt: [],
     skillsToLearn: [],
     education: [
@@ -41,10 +42,13 @@ const EditProfile = () => {
     ],
     bio: "",
     projects: [],
+    availability: [],
+    customTimeSlots: [], // [{from: '', to: ''}]
   });
   const [skillsProficientAt, setSkillsProficientAt] = useState("Select some skill");
   const [skillsToLearn, setSkillsToLearn] = useState("Select some skill");
   const [techStack, setTechStack] = useState([]);
+  const [newTimeSlot, setNewTimeSlot] = useState({ from: '', to: '' });
 
   const [activeKey, setActiveKey] = useState("registration");
 
@@ -60,9 +64,13 @@ const EditProfile = () => {
         portfolioLink: user?.portfolioLink,
         githubLink: user?.githubLink,
         linkedinLink: user?.linkedinLink,
+        visibility: user?.visibility || "public",
         education: user?.education,
         bio: user?.bio,
         projects: user?.projects,
+        availability: user?.availability || [],
+        customTimeSlots: user?.customTimeSlots || [],
+        picture: user?.picture,
       }));
       setTechStack(user?.projects.map((project) => "Select some Tech Stack"));
     }
@@ -110,7 +118,12 @@ const EditProfile = () => {
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    if (type === "checkbox") {
+    if (type === "checkbox" && name === "availability") {
+      setForm((prevState) => ({
+        ...prevState,
+        availability: checked ? [...prevState.availability, value] : prevState.availability.filter((item) => item !== value),
+      }));
+    } else if (type === "checkbox") {
       setForm((prevState) => ({
         ...prevState,
         [name]: checked ? [...prevState[name], value] : prevState[name].filter((item) => item !== value),
@@ -126,6 +139,18 @@ const EditProfile = () => {
       }));
     }
     // console.log("Form: ", form);
+  };
+  const handleCustomTimeSlotChange = (e) => {
+    const { name, value } = e.target;
+    setNewTimeSlot((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleAddCustomTimeSlot = () => {
+    if (!newTimeSlot.from || !newTimeSlot.to) return;
+    setForm((prev) => ({ ...prev, customTimeSlots: [...prev.customTimeSlots, newTimeSlot] }));
+    setNewTimeSlot({ from: '', to: '' });
+  };
+  const handleRemoveCustomTimeSlot = (idx) => {
+    setForm((prev) => ({ ...prev, customTimeSlots: prev.customTimeSlots.filter((_, i) => i !== idx) }));
   };
 
   const handleAddSkill = (e) => {
@@ -381,6 +406,35 @@ const EditProfile = () => {
     }
   };
 
+  const handleUpdateVisibility = async () => {
+    setSaveLoading(true);
+    try {
+      const { data } = await axios.patch("/user/updateVisibility", {
+        visibility: form.visibility,
+      });
+      toast.success("Profile visibility updated successfully");
+      // Update the user context with new visibility
+      if (user) {
+        setUser({ ...user, visibility: form.visibility });
+      }
+    } catch (error) {
+      console.log(error);
+      if (error?.response?.data?.message) {
+        toast.error(error.response.data.message);
+        if (error.response.data.message === "Please Login") {
+          localStorage.removeItem("userInfo");
+          setUser(null);
+          await axios.get("/auth/logout");
+          navigate("/login");
+        }
+      } else {
+        toast.error("Some error occurred");
+      }
+    } finally {
+      setSaveLoading(false);
+    }
+  };
+
   // const handleSubmit = async () => {
   //   const check1 = validateRegForm();
   //   const check2 = validateEduForm();
@@ -446,6 +500,9 @@ const EditProfile = () => {
                 <label style={{ color: "#3BB4A1" }}>Profile Photo</label>
                 <br />
                 <input type="file" accept="image/*" onChange={handleFileChange} />
+                {form.picture && (
+                  <img src={form.picture} alt="Profile Preview" style={{ width: 60, height: 60, borderRadius: '50%', display: 'block', marginTop: '0.5rem' }} />
+                )}
               </div>
               {/* Email */}
               <div>
@@ -547,6 +604,30 @@ const EditProfile = () => {
                   placeholder="Enter your portfolio link"
                 />
               </div>
+              {/* Profile Visibility */}
+              <div>
+                <label className="mt-3" style={{ color: "#3BB4A1" }}>
+                  Profile Visibility
+                </label>
+                <br />
+                <Form.Select
+                  name="visibility"
+                  value={form.visibility}
+                  onChange={handleInputChange}
+                  style={{
+                    borderRadius: "5px",
+                    border: "1px solid #3BB4A1",
+                    padding: "5px",
+                    width: "100%",
+                  }}
+                >
+                  <option value="public">Public</option>
+                  <option value="private">Private</option>
+                </Form.Select>
+                <button className="btn btn-info mt-2 ms-1" onClick={handleUpdateVisibility} disabled={saveLoading}>
+                  {saveLoading ? <Spinner animation="border" variant="light" size="sm" /> : "Update Visibility"}
+                </button>
+              </div>
               {/* Skills Proficient At */}
               <div>
                 <label className="mt-3" style={{ color: "#3BB4A1" }}>
@@ -619,6 +700,40 @@ const EditProfile = () => {
                   Add Skill
                 </button>
               </div>
+              {/* Availability */}
+              <Form.Group className="mt-3">
+                <Form.Label style={{ color: "#3BB4A1" }}>Availability</Form.Label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
+                  {['Weekdays', 'Weekends', 'Mornings', 'Afternoons', 'Evenings', 'Nights', 'Early Morning', 'Late Morning', 'Afternoon', 'Early Evening', 'Late Evening', 'Night', 'Late Night'].map((slot) => (
+                    <Form.Check
+                      key={slot}
+                      type="checkbox"
+                      label={slot}
+                      name="availability"
+                      value={slot}
+                      checked={form.availability.includes(slot)}
+                      onChange={handleInputChange}
+                    />
+                  ))}
+                </div>
+                <div style={{ marginTop: '1rem' }}>
+                  <strong>Custom Time Slots:</strong>
+                  <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                    <Form.Control type="time" name="from" value={newTimeSlot.from} onChange={handleCustomTimeSlotChange} style={{ width: '120px' }} />
+                    <span>to</span>
+                    <Form.Control type="time" name="to" value={newTimeSlot.to} onChange={handleCustomTimeSlotChange} style={{ width: '120px' }} />
+                    <button type="button" className="btn btn-success btn-sm" onClick={handleAddCustomTimeSlot}>Add</button>
+                  </div>
+                  <ul style={{ marginTop: '0.5rem', paddingLeft: '1rem' }}>
+                    {form.customTimeSlots.map((slot, idx) => (
+                      <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {slot.from} - {slot.to}
+                        <button type="button" className="btn btn-danger btn-sm" onClick={() => handleRemoveCustomTimeSlot(idx)}>Remove</button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </Form.Group>
               <div className="row m-auto d-flex justify-content-center mt-3">
                 <button className="btn btn-warning" onClick={handleSaveRegistration} disabled={saveLoading}>
                   {saveLoading ? <Spinner animation="border" variant="primary" /> : "Save"}
@@ -1131,7 +1246,16 @@ const EditProfile = () => {
                     <span style={{ flex: 1, fontWeight: "bold", color: "#3BB4A1" }}>Skills To Learn:</span>
                     <span style={{ flex: 2 }}>{form?.skillsToLearn?.join(", ") || "Yet to be filled"}</span>
                   </div>
-
+                  {form.availability && form.availability.length > 0 && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <strong>Availability:</strong> {form.availability.join(', ')}
+                    </div>
+                  )}
+                  {form.customTimeSlots && form.customTimeSlots.length > 0 && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <strong>Custom Time Slots:</strong> {form.customTimeSlots.map(slot => `${slot.from}–${slot.to}`).join(', ')}
+                    </div>
+                  )}
                   <div
                     style={{
                       display: "flex",

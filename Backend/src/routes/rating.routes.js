@@ -1,19 +1,10 @@
-import { Router } from "express";
+import express from "express";
+import { rateUser } from "../controllers/rating.controllers.js";
 import { verifyJWT_username } from "../middlewares/verifyJWT.middleware.js";
-import {
-  createRating,
-  getUserRatings,
-  getRatingsGiven,
-  updateRating,
-  deleteRating,
-} from "../controllers/rating.controllers.js";
 
-const router = Router();
+const router = express.Router();
 
-router.route("/create").post(verifyJWT_username, createRating);
-router.route("/user/:username").get(verifyJWT_username, getUserRatings);
-router.route("/given").get(verifyJWT_username, getRatingsGiven);
-router.route("/update/:ratingId").patch(verifyJWT_username, updateRating);
-router.route("/delete/:ratingId").delete(verifyJWT_username, deleteRating);
+router.post("/rateUser", verifyJWT_username, rateUser);
+// router.get("/getRatings/:username", verifyJWT_username, getRatings);
 
 export default router;

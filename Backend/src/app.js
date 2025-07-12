@@ -12,8 +12,8 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "16kb" })); // to parse json in body
-app.use(express.urlencoded({ extended: true, limit: "16kb" })); // to parse url
+app.use(express.json({ limit: "10mb" })); // to parse json in body
+app.use(express.urlencoded({ extended: true, limit: "10mb" })); // to parse url
 app.use(express.static("public")); // to use static public folder
 app.use(cookieParser()); // to enable CRUD operation on browser cookies
 
@@ -35,7 +35,8 @@ import messageRouter from "./routes/message.routes.js";
 import requestRouter from "./routes/request.routes.js";
 import reportRouter from "./routes/report.routes.js";
 import ratingRouter from "./routes/rating.routes.js";
-
+import platformMessageRouter from "./routes/platformMessage.routes.js";
+// import requestRouter from "./routes/request.route.js"
 // Using routes
 app.use("/user", userRouter);
 app.use("/auth", authRouter);
@@ -44,5 +45,7 @@ app.use("/message", messageRouter);
 app.use("/request", requestRouter);
 app.use("/report", reportRouter);
 app.use("/rating", ratingRouter);
+app.use("/create",requestRouter);
+app.use("/platform-message", platformMessageRouter);
 
 export { app };

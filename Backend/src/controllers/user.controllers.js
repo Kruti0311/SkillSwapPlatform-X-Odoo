@@ -25,6 +25,12 @@ export const UserDetails = asyncHandler(async (req, res) => {
 
   const receiverID = user._id;
   const senderID = req.user._id;
+
+  // Check if the profile is private and not the owner
+  const isOwner = user._id.toString() === req.user._id.toString();
+  const isPrivate = user.visibility === "private";
+
+  // Check if users are connected
   const request = await Request.find({
     $or: [
       { sender: senderID, receiver: receiverID },
@@ -32,16 +38,48 @@ export const UserDetails = asyncHandler(async (req, res) => {
     ],
   });
 
-  // console.log("request", request);
-
   const status = request.length > 0 ? request[0].status : "Connect";
+  const isConnected = request.length > 0 && request[0].status === "Connected";
 
-  // console.log(" userDetail: ", userDetail);
-  // console.log("user", user);
+  // If profile is private, not the owner, and not connected, return limited data
+  if (isPrivate && !isOwner && !isConnected) {
+    // Return limited data for private profiles
+    const limitedUserData = {
+      _id: user._id.toString(), // Ensure this is properly converted to string
+      username: user.username,
+      name: user.name,
+      picture: user.picture,
+      visibility: user.visibility,
+      bio: "This profile is private",
+      rating: user.rating,
+      status: status,
+      skillsProficientAt: [],
+      skillsToLearn: [],
+      education: [],
+      projects: [],
+      linkedinLink: "",
+      githubLink: "",
+      portfolioLink: "",
+    };
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, limitedUserData, "Private profile - limited information available"));
+  }
+
+  // Remove email from the response for privacy
+  const userData = user.toObject();
+  delete userData.email;
+
+  // Ensure _id is included in the response
+  userData._id = user._id.toString();
+  userData.status = status;
+
   return res
     .status(200)
-    .json(new ApiResponse(200, { ...user._doc, status: status }, "User details fetched successfully"));
+    .json(new ApiResponse(200, userData, "User details fetched successfully"));
 });
+
 
 export const UnRegisteredUserDetails = asyncHandler(async (req, res) => {
   console.log("\n******** Inside UnRegisteredUserDetails Controller function ********");
@@ -53,7 +91,7 @@ export const UnRegisteredUserDetails = asyncHandler(async (req, res) => {
 export const saveRegUnRegisteredUser = asyncHandler(async (req, res) => {
   console.log("\n******** Inside saveRegUnRegisteredUser Controller function ********");
 
-  const { name, email, username, linkedinLink, githubLink, portfolioLink, skillsProficientAt, skillsToLearn } =
+  const { name, email, username, linkedinLink, githubLink, portfolioLink, skillsProficientAt, skillsToLearn, picture, availability, customTimeSlots, location } =
     req.body;
   // console.log("Body: ", req.body);
 
@@ -95,6 +133,10 @@ export const saveRegUnRegisteredUser = asyncHandler(async (req, res) => {
       portfolioLink: portfolioLink,
       skillsProficientAt: skillsProficientAt,
       skillsToLearn: skillsToLearn,
+      picture: picture,
+      availability: availability,
+      customTimeSlots: customTimeSlots,
+      location: location,
     }
   );
 
@@ -192,7 +234,14 @@ export const registerUser = async (req, res) => {
     education,
     bio,
     projects,
+    picture,
+    availability,
+    customTimeSlots,
+    location,
   } = req.body;
+
+  console.log("Registration - Uploaded picture:", picture);
+  console.log("Registration - OAuth picture:", req.user.picture);
 
   if (!name || !email || !username || skillsProficientAt.length === 0 || skillsToLearn.length === 0) {
     throw new ApiError(400, "Please provide all the details");
@@ -267,12 +316,16 @@ export const registerUser = async (req, res) => {
     linkedinLink: linkedinLink,
     githubLink: githubLink,
     portfolioLink: portfolioLink,
+    visibility: req.body.visibility || "public",
     skillsProficientAt: skillsProficientAt,
     skillsToLearn: skillsToLearn,
     education: education,
     bio: bio,
     projects: projects,
-    picture: req.user.picture,
+    picture: picture && picture.trim() !== "" ? picture : req.user.picture,
+    availability: availability,
+    customTimeSlots: customTimeSlots,
+    location: location,
   });
 
   if (!newUser) {
@@ -291,8 +344,20 @@ export const registerUser = async (req, res) => {
 export const saveRegRegisteredUser = asyncHandler(async (req, res) => {
   console.log("******** Inside saveRegRegisteredUser Function *******");
 
-  const { name, username, linkedinLink, githubLink, portfolioLink, skillsProficientAt, skillsToLearn, picture } =
-    req.body;
+  const {
+    name,
+    username,
+    linkedinLink,
+    githubLink,
+    portfolioLink,
+    skillsProficientAt,
+    skillsToLearn,
+    picture,
+    visibility,
+    availability,
+    customTimeSlots,
+    location,
+  } = req.body;
 
   console.log("Body: ", req.body);
 
@@ -325,6 +390,10 @@ export const saveRegRegisteredUser = asyncHandler(async (req, res) => {
       skillsProficientAt: skillsProficientAt,
       skillsToLearn: skillsToLearn,
       picture: picture,
+      visibility: visibility || "public",
+      availability: availability,
+      customTimeSlots: customTimeSlots,
+      location: location,
     }
   );
 
@@ -518,6 +587,7 @@ export const uploadPic = asyncHandler(async (req, res) => {
   res.status(200).json(new ApiResponse(200, { url: picture.url }, "Picture uploaded successfully"));
 });
 
+// Update the discoverUsers function to include visibility
 export const discoverUsers = asyncHandler(async (req, res) => {
   console.log("******** Inside discoverUsers Function *******");
 
@@ -543,41 +613,34 @@ export const discoverUsers = asyncHandler(async (req, res) => {
     "Machine Learning",
   ];
 
-  // Find all the users except the current users who are proficient in the skills that the current user wants to learn and also the the users who are proficient in the web development skills and machine learning skills in the array above
-  //
-
-  //  fetch all users except the current user
-
-  const users = await User.find({ username: { $ne: req.user.username } });
-
-  // now make three seperate list of the users who are proficient in the skills that the current user wants to learn, the users who are proficient in the web development skills and the users who are proficient in the machine learning skills and others also limit the size of the array to 5;
-
-  // const users = await User.find({
-  //   skillsProficientAt: { $in: req.user.skillsToLearn },
-  //   username: { $ne: req.user.username },
-  // });
+  // Fetch all users except the current user and banned users, including visibility field
+  const users = await User.find({ username: { $ne: req.user.username }, banned: { $ne: true } }).select(
+    "username name picture bio rating skillsProficientAt visibility"
+  );
 
   if (!users) {
     throw new ApiError(500, "Error in fetching users");
   }
+
   const usersToLearn = [];
   const webDevUsers = [];
   const mlUsers = [];
   const otherUsers = [];
 
-  // randomly suffle the users array
-
+  // Randomly shuffle the users array
   users.sort(() => Math.random() - 0.5);
 
   users.forEach((user) => {
+    const userObj = user.toObject();
+
     if (user.skillsProficientAt.some((skill) => req.user.skillsToLearn.includes(skill)) && usersToLearn.length < 5) {
-      usersToLearn.push(user);
+      usersToLearn.push(userObj);
     } else if (user.skillsProficientAt.some((skill) => webDevSkills.includes(skill)) && webDevUsers.length < 5) {
-      webDevUsers.push(user);
+      webDevUsers.push(userObj);
     } else if (user.skillsProficientAt.some((skill) => machineLearningSkills.includes(skill)) && mlUsers.length < 5) {
-      mlUsers.push(user);
+      mlUsers.push(userObj);
     } else {
-      if (otherUsers.length < 5) otherUsers.push(user);
+      if (otherUsers.length < 5) otherUsers.push(userObj);
     }
   });
 
@@ -615,109 +678,45 @@ export const sendScheduleMeet = asyncHandler(async (req, res) => {
   return res.status(200).json(new ApiResponse(200, null, "Email sent successfully"));
 });
 
-// Search users by skill
-export const searchUsersBySkill = asyncHandler(async (req, res) => {
-  console.log("******** Inside searchUsersBySkill Function *******");
-
-  const { skill, type = "both" } = req.query;
-  
-  if (!skill) {
-    throw new ApiError(400, "Skill parameter is required");
-  }
-
-  let query = {
-    username: { $ne: req.user.username },
-    isPublic: true,
-  };
-
-  if (type === "offered") {
-    query.skillsProficientAt = { $regex: skill, $options: "i" };
-  } else if (type === "wanted") {
-    query.skillsToLearn = { $regex: skill, $options: "i" };
-  } else {
-    query.$or = [
-      { skillsProficientAt: { $regex: skill, $options: "i" } },
-      { skillsToLearn: { $regex: skill, $options: "i" } }
-    ];
-  }
-
-  const users = await User.find(query).select("username name picture location rating totalRatings skillsProficientAt skillsToLearn availability");
-
-  return res.status(200).json(new ApiResponse(200, users, "Users found successfully"));
-});
-
-// Update profile visibility
 export const updateProfileVisibility = asyncHandler(async (req, res) => {
-  console.log("******** Inside updateProfileVisibility Function *******");
+  const { visibility } = req.body;
 
-  const { isPublic } = req.body;
-  
-  if (typeof isPublic !== "boolean") {
-    throw new ApiError(400, "isPublic must be a boolean value");
+  if (!["public", "private"].includes(visibility)) {
+    throw new ApiError(400, "Invalid visibility option. Must be 'public' or 'private'");
   }
 
-  const user = await User.findOneAndUpdate(
-    { username: req.user.username },
-    { isPublic: isPublic },
-    { new: true }
-  );
+  const updatedUser = await User.findByIdAndUpdate(req.user._id, { visibility }, { new: true }).select("-email");
 
-  if (!user) {
-    throw new ApiError(500, "Error updating profile visibility");
-  }
-
-  return res.status(200).json(new ApiResponse(200, { isPublic: user.isPublic }, "Profile visibility updated successfully"));
+  return res.status(200).json(new ApiResponse(200, updatedUser, "Profile visibility updated successfully"));
 });
 
-// Update availability
-export const updateAvailability = asyncHandler(async (req, res) => {
-  console.log("******** Inside updateAvailability Function *******");
-
-  const { availability } = req.body;
+export const createRequest = asyncHandler(async (req, res) => {
+  const { receiverID } = req.body;
   
-  if (!Array.isArray(availability)) {
-    throw new ApiError(400, "Availability must be an array");
+  // Check if the receiver exists
+  const receiver = await User.findById(receiverID);
+  if (!receiver) {
+    throw new ApiError(404, "Receiver not found");
   }
 
-  const validOptions = ["weekdays", "weekends", "evenings", "mornings", "afternoons"];
-  const isValid = availability.every(item => validOptions.includes(item));
-  
-  if (!isValid) {
-    throw new ApiError(400, "Invalid availability options");
+  // Check if a connection request already exists between the users
+  const existingRequest = await Request.findOne({
+    $or: [
+      { sender: req.user._id, receiver: receiverID },
+      { sender: receiverID, receiver: req.user._id },
+    ],
+  });
+
+  if (existingRequest) {
+    throw new ApiError(400, "Connection request already exists");
   }
 
-  const user = await User.findOneAndUpdate(
-    { username: req.user.username },
-    { availability: availability },
-    { new: true }
-  );
+  // Create new connection request
+  const newRequest = await Request.create({
+    sender: req.user._id,
+    receiver: receiverID,
+    status: "Pending",
+  });
 
-  if (!user) {
-    throw new ApiError(500, "Error updating availability");
-  }
-
-  return res.status(200).json(new ApiResponse(200, { availability: user.availability }, "Availability updated successfully"));
-});
-
-// Update location
-export const updateLocation = asyncHandler(async (req, res) => {
-  console.log("******** Inside updateLocation Function *******");
-
-  const { location } = req.body;
-  
-  if (typeof location !== "string") {
-    throw new ApiError(400, "Location must be a string");
-  }
-
-  const user = await User.findOneAndUpdate(
-    { username: req.user.username },
-    { location: location },
-    { new: true }
-  );
-
-  if (!user) {
-    throw new ApiError(500, "Error updating location");
-  }
-
-  return res.status(200).json(new ApiResponse(200, { location: user.location }, "Location updated successfully"));
+  return res.status(200).json(new ApiResponse(200, newRequest, "Connection request sent successfully"));
 });

@@ -105,6 +105,28 @@ const unRegisteredUserSchema = new Schema(
         },
       },
     ],
+    availability: [
+      {
+        type: String,
+        default: "",
+      },
+    ],
+    customTimeSlots: [
+      {
+        from: {
+          type: String,
+          default: "",
+        },
+        to: {
+          type: String,
+          default: "",
+        },
+      },
+    ],
+    location: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

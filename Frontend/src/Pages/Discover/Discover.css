@@ -106,6 +106,138 @@ h2 {
   margin-top: 5rem;
 }
 
+.discover-modern-bg {
+  min-height: 100vh;
+  background: radial-gradient(ellipse at 50% 30%, #1a233a 60%, #0a0f1a 100%);
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+
+.discover-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 2vw 2rem 2vw;
+  position: relative;
+  z-index: 2;
+}
+
+.discover-hero-glow {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: radial-gradient(circle at 50% 40%, #00e6ff33 0%, #7f5cff22 60%, transparent 100%);
+  filter: blur(60px);
+  z-index: 0;
+}
+
+.discover-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.discover-title {
+  font-size: 2.5rem;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(90deg, #00e6ff, #7f5cff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.discover-search-bar {
+  width: 350px;
+  padding: 0.7rem 1.2rem;
+  border-radius: 1.5rem;
+  border: 1.5px solid #00e6ff;
+  font-size: 1.1rem;
+  background: #181f2f;
+  color: #fff;
+  margin-bottom: 2rem;
+  outline: none;
+  box-shadow: 0 0 0 #00e6ff00;
+  transition: box-shadow 0.2s, border 0.2s;
+}
+.discover-search-bar:focus {
+  border: 1.5px solid #7f5cff;
+  box-shadow: 0 0 0 3px #00e6ff55;
+}
+
+.discover-tabs {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-bottom: 2.5rem;
+  position: relative;
+}
+
+.discover-tab-btn {
+  background: none;
+  border: none;
+  color: #b0c4e7;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: 0.7rem 1.7rem;
+  border-radius: 2rem;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s, background 0.2s;
+  outline: none;
+  z-index: 2;
+}
+.discover-tab-btn.active {
+  color: #fff;
+  background: linear-gradient(90deg, #00e6ff33, #7f5cff33);
+}
+.tab-underline {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: 7px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #00e6ff, #7f5cff);
+  z-index: 1;
+}
+
+.discover-cards-section {
+  min-height: 400px;
+  margin-top: 1.5rem;
+}
+
+.discover-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 2.2rem;
+  margin-top: 1.5rem;
+  z-index: 2;
+}
+
+.discover-spinner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.discover-animated-particles {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.discover-particle {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  opacity: 0.7;
+  filter: blur(2px);
+}
+
 @media (max-width: 768px) {
   .nav-bar {
     display: none;
@@ -147,5 +279,44 @@ h2 {
 
   .search-bar {
     min-width: 80vw;
+  }
+}
+
+@media (max-width: 900px) {
+  .discover-container {
+    padding: 2rem 1vw 1rem 1vw;
+  }
+  .discover-title {
+    font-size: 1.5rem;
+  }
+  .discover-search-bar {
+    width: 90vw;
+    font-size: 1rem;
+  }
+  .discover-tabs {
+    gap: 0.7rem;
+  }
+  .discover-cards-grid {
+    gap: 1.2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .discover-container {
+    padding: 1rem 0.5vw 0.5rem 0.5vw;
+  }
+  .discover-title {
+    font-size: 1.1rem;
+  }
+  .discover-search-bar {
+    width: 95vw;
+    font-size: 0.95rem;
+  }
+  .discover-tabs {
+    gap: 0.3rem;
+  }
+  .discover-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 0.7rem;
   }
 }

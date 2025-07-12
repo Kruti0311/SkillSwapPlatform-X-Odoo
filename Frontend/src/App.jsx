@@ -15,6 +15,15 @@ import EditProfile from "./Pages/EditProfile/EditProfile";
 import PrivateRoutes from "./util/PrivateRoutes";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AdminDashboard from "./Pages/AdminDashboard";
+import PlatformMessages from "./Pages/PlatformMessages/PlatformMessages";
+
+const Banned = () => (
+  <div style={{ padding: '4rem', textAlign: 'center' }}>
+    <h1 style={{ color: 'red' }}>You have been banned</h1>
+    <p>Your account has been banned due to violation of platform policies. If you believe this is a mistake, please contact support.</p>
+  </div>
+);
 
 const App = () => {
   return (
@@ -24,6 +33,8 @@ const App = () => {
       <Routes>
         <Route element={<PrivateRoutes />}>
           <Route path="/chats" element={<Chats />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/platform-messages" element={<PlatformMessages />} />
         </Route>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
@@ -34,6 +45,7 @@ const App = () => {
         <Route path="/report/:username" element={<Report />} />
         <Route path="/profile/:username" element={<Profile />} />
         <Route path="/rating/:username" element={<Rating />} />
+        <Route path="/banned" element={<Banned />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
 

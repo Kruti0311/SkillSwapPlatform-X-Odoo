@@ -12,6 +12,7 @@ import ScrollableFeed from "react-scrollable-feed";
 import RequestCard from "./RequestCard";
 import "./Chats.css";
 import Modal from "react-bootstrap/Modal";
+import { motion, AnimatePresence } from "framer-motion";
 
 var socket;
 const Chats = () => {
@@ -73,33 +74,49 @@ const Chats = () => {
     try {
       setChatLoading(true);
       const tempUser = JSON.parse(localStorage.getItem("userInfo"));
-      const { data } = await axios.get("http://localhost:8000/chat");
-      // console.log("Chats", data.data);
-      toast.success(data.message);
-      if (tempUser?._id) {
+      
+      if (!tempUser?._id) {
+        toast.error("Please login to view chats");
+        navigate("/login");
+        return;
+      }
+      
+      const { data } = await axios.get("/chat");
+      console.log("Chats response:", data);
+      
+      if (data?.data && Array.isArray(data.data)) {
         const temp = data.data.map((chat) => {
+          const otherUser = chat?.users.find((u) => u?._id !== tempUser?._id);
           return {
             id: chat._id,
-            name: chat?.users.find((u) => u?._id !== tempUser?._id).name,
-            picture: chat?.users.find((u) => u?._id !== tempUser?._id).picture,
-            username: chat?.users.find((u) => u?._id !== tempUser?._id).username,
+            name: otherUser?.name || "Unknown User",
+            picture: otherUser?.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUser?.name || "User")}&background=667eea&color=fff&size=150`,
+            username: otherUser?.username || "unknown",
           };
         });
         setChats(temp);
-      }
-      // console.log(temp);
-    } catch (err) {
-      console.log(err);
-      if (err?.response?.data?.message) {
-        toast.error(err.response.data.message);
-        if (err.response.data.message === "Please Login") {
-          localStorage.removeItem("userInfo");
-          setUser(null);
-          await axios.get("/auth/logout");
-          navigate("/login");
+        if (data.message) {
+          toast.success(data.message);
         }
       } else {
-        toast.error("Something went wrong");
+        setChats([]);
+        console.log("No chats found or invalid response format");
+      }
+    } catch (err) {
+      console.error("Error fetching chats:", err);
+      if (err?.response?.status === 401) {
+        toast.error("Please login to view chats");
+        localStorage.removeItem("userInfo");
+        setUser(null);
+        navigate("/login");
+      } else if (err?.response?.status === 404) {
+        toast.error("Chat service not available");
+      } else if (err?.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else if (err.code === 'ERR_NETWORK') {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error("Failed to load chats. Please try again.");
       }
     } finally {
       setChatLoading(false);
@@ -113,7 +130,7 @@ const Chats = () => {
   const handleChatClick = async (chatId) => {
     try {
       setChatMessageLoading(true);
-      const { data } = await axios.get(`http://localhost:8000/message/getMessages/${chatId}`);
+      const { data } = await axios.get(`/message/getMessages/${chatId}`);
       setChatMessages(data.data);
       // console.log("Chat Messages:", data.data);
       setMessage("");
@@ -175,22 +192,45 @@ const Chats = () => {
   const getRequests = async () => {
     try {
       setRequestLoading(true);
-      const { data } = await axios.get("/request/getRequests");
-      setRequests(data.data);
-      console.log(data.data);
-      toast.success(data.message);
-    } catch (err) {
-      console.log(err);
-      if (err?.response?.data?.message) {
-        toast.error(err.response.data.message);
-        if (err.response.data.message === "Please Login") {
-          await axios.get("/auth/logout");
-          setUser(null);
-          localStorage.removeItem("userInfo");
-          navigate("/login");
+      const { data } = await axios.get("/request/all");
+      console.log("Requests response:", data);
+      
+      if (data?.data && data.data.received && Array.isArray(data.data.received)) {
+        // Map the received requests to include sender details
+        const mappedRequests = data.data.received.map(request => ({
+          _id: request._id, // This is the request ID
+          name: request.sender?.name || "Unknown User",
+          picture: request.sender?.picture || `https://ui-avatars.com/api/?name=${encodeURIComponent(request.sender?.name || "User")}&background=667eea&color=fff&size=150`,
+          username: request.sender?.username || "unknown",
+          senderId: request.sender?._id, // Store sender ID for accept/reject
+          status: request.status,
+          offeredSkill: request.offeredSkill,
+          requestedSkill: request.requestedSkill,
+          message: request.message
+        }));
+        setRequests(mappedRequests);
+        if (data.message) {
+          toast.success(data.message);
         }
       } else {
-        toast.error("Something went wrong");
+        setRequests([]);
+        console.log("No requests found or invalid response format");
+      }
+    } catch (err) {
+      console.error("Error fetching requests:", err);
+      if (err?.response?.status === 401) {
+        toast.error("Please login to view requests");
+        localStorage.removeItem("userInfo");
+        setUser(null);
+        navigate("/login");
+      } else if (err?.response?.status === 404) {
+        toast.error("Request service not available");
+      } else if (err?.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else if (err.code === 'ERR_NETWORK') {
+        toast.error("Network error. Please check your connection and try again.");
+      } else {
+        toast.error("Failed to load requests. Please try again.");
       }
     } finally {
       setRequestLoading(false);
@@ -219,7 +259,7 @@ const Chats = () => {
 
     try {
       setAcceptRequestLoading(true);
-      const { data } = await axios.post("/request/acceptRequest", { requestId: selectedRequest._id });
+      const { data } = await axios.post("/request/accept", { requestId: selectedRequest.senderId });
       console.log(data);
       toast.success(data.message);
       // remove this request from the requests list
@@ -247,7 +287,7 @@ const Chats = () => {
     console.log("Request rejected");
     try {
       setAcceptRequestLoading(true);
-      const { data } = axios.post("/request/rejectRequest", { requestId: selectedRequest._id });
+      const { data } = await axios.post("/request/reject", { requestId: selectedRequest.senderId });
       console.log(data);
       toast.success(data.message);
       setRequests((prevState) => prevState.filter((request) => request._id !== selectedRequest._id));
@@ -270,370 +310,513 @@ const Chats = () => {
     }
   };
 
+  // Add a function to delete/cancel a request
+  const handleRequestDelete = async (requestId) => {
+    try {
+      setRequestLoading(true);
+      const { data } = await axios.delete(`/request/delete/${requestId}`);
+      toast.success(data.message || 'Request deleted successfully');
+      setRequests((prevState) => prevState.filter((request) => request._id !== requestId));
+    } catch (err) {
+      console.log(err);
+      if (err?.response?.data?.message) {
+        toast.error(err.response.data.message);
+      } else {
+        toast.error('Something went wrong');
+      }
+    } finally {
+      setRequestLoading(false);
+    }
+  };
+
   return (
-    <div className="container-overall">
-      <div className="container-right">
-        {/* Chat History */}
-        <div className="container-left">
-          {/* Tabs */}
-          <div className="tabs">
-            <Button
-              className="chatButton"
-              variant="secondary"
-              style={{
-                borderTop: showChatHistory ? "1px solid lightgrey" : "1px solid lightgrey",
-                borderRight: showChatHistory ? "1px solid lightgrey" : "1px solid lightgrey",
-                borderLeft: showChatHistory ? "1px solid lightgrey" : "1px solid lightgrey",
-                borderBottom: "none",
-                backgroundColor: showChatHistory ? "#3bb4a1" : "#2d2d2d",
-                color: showChatHistory ? "black" : "white",
-                cursor: "pointer",
-                minWidth: "150px",
-                padding: "10px",
-                borderRadius: "5px 5px 0 0",
+    <div className="chats-container">
+      {/* Animated Background */}
+      <div className="chats-background">
+        <div className="floating-particles">
+          {[...Array(20)].map((_, i) => (
+            <motion.div
+              key={i}
+              className="particle"
+              animate={{
+                y: [0, -100, 0],
+                x: [0, Math.random() * 100 - 50, 0],
+                opacity: [0.3, 0.8, 0.3],
               }}
-              onClick={() => handleTabClick("chat")}
-            >
-              Chat History
-            </Button>
-            <Button
-              className="requestButton"
-              variant="secondary"
-              style={{
-                borderTop: showRequests ? "1px solid lightgrey" : "1px solid lightgrey",
-                borderRight: showRequests ? "1px solid lightgrey" : "1px solid lightgrey",
-                borderLeft: showRequests ? "1px solid lightgrey" : "1px solid lightgrey",
-                borderBottom: "none",
-                backgroundColor: showChatHistory ? "#2d2d2d" : "#3bb4a1",
-                color: showChatHistory ? "white" : "black",
-                cursor: "pointer",
-                minWidth: "150px",
-                padding: "10px",
-                borderRadius: "5px 5px 0 0",
+              transition={{
+                duration: 3 + Math.random() * 2,
+                repeat: Infinity,
+                delay: Math.random() * 2,
               }}
-              onClick={() => handleTabClick("requests")}
-            >
-              Requests
-            </Button>
-          </div>
-
-          {/* Chat History or Requests List */}
-          {showChatHistory && (
-            <div className="container-left">
-              <ListGroup className="chat-list">
-                {chatLoading ? (
-                  <div className="row m-auto mt-5">
-                    <Spinner animation="border" variant="primary" />
-                  </div>
-                ) : (
-                  <>
-                    {chats.map((chat) => (
-                      <ListGroup.Item
-                        key={chat.id}
-                        onClick={() => handleChatClick(chat.id)}
-                        style={{
-                          cursor: "pointer",
-                          marginBottom: "10px",
-                          padding: "10px",
-                          backgroundColor: selectedChat?.id === chat?.id ? "#3BB4A1" : "lightgrey",
-                          borderRadius: "5px",
-                        }}
-                      >
-                        {chat.name}
-                      </ListGroup.Item>
-                    ))}
-                  </>
-                )}
-              </ListGroup>
-            </div>
-          )}
-          {showRequests && (
-            <div className="container-left">
-              <ListGroup style={{ padding: "10px" }}>
-                {requestLoading ? (
-                  <div className="row m-auto mt-5">
-                    <Spinner animation="border" variant="primary" />
-                  </div>
-                ) : (
-                  <>
-                    {requests.map((request) => (
-                      <ListGroup.Item
-                        key={request.id}
-                        onClick={() => handleRequestClick(request)}
-                        style={{
-                          cursor: "pointer",
-                          marginBottom: "10px",
-                          padding: "10px",
-                          backgroundColor:
-                            selectedRequest && selectedRequest.id === request.id ? "#3BB4A1" : "lightgrey",
-                          borderRadius: "5px",
-                        }}
-                      >
-                        {request.name}
-                      </ListGroup.Item>
-                    ))}
-                  </>
-                )}
-              </ListGroup>
-            </div>
-          )}
-          {requestModalShow && (
-            <div className="modalBG" onClick={() => setRequestModalShow(false)}>
-              <div className="modalContent">
-                <h2 style={{ textAlign: "center" }}>Confirm your choice?</h2>
-                {selectedRequest && (
-                  <RequestCard
-                    name={selectedRequest?.name}
-                    skills={selectedRequest?.skillsProficientAt}
-                    rating="4"
-                    picture={selectedRequest?.picture}
-                    username={selectedRequest?.username}
-                    onClose={() => setSelectedRequest(null)} // Close modal when clicked outside or close button
-                  />
-                )}
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <button className="connect-button" style={{ marginLeft: "0" }} onClick={handleRequestAccept}>
-                    {acceptRequestLoading ? (
-                      <div className="row m-auto ">
-                        <Spinner animation="border" variant="primary" />
-                      </div>
-                    ) : (
-                      "Accept!"
-                    )}
-                  </button>
-                  <button className="report-button" onClick={handleRequestReject}>
-                    {acceptRequestLoading ? (
-                      <div className="row m-auto ">
-                        <Spinner animation="border" variant="primary" />
-                      </div>
-                    ) : (
-                      "Reject"
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-        {/* Right Section */}
-        <div className="container-chat">
-          {/* Profile Bar */}
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              padding: "10px",
-              borderBottom: "1px solid #2d2d2d",
-              minHeight: "50px",
-            }}
-          >
-            {/* Profile Info (Placeholder) */}
-            {selectedChat && (
-              <>
-                <div>
-                  <img
-                    src={selectedChat?.picture ? selectedChat.picture : "https://via.placeholder.com/150"}
-                    alt="Profile"
-                    style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "10px" }}
-                  />
-                  <span style={{ fontFamily: "Montserrat, sans-serif", color: "#2d2d2d" }}>
-                    {selectedChat?.username}
-                  </span>
-                </div>
-                <Button variant="info" onClick={handleScheduleClick}>
-                  Request Video Call
-                </Button>
-              </>
-            )}
-
-            {/* Schedule Video Call Button */}
-          </div>
-
-          {/* Chat Interface */}
-          <div style={{ flex: "7", position: "relative", height: "calc(100vh - 160px)" }}>
-            {/* Chat Messages */}
-            <div
-              style={{
-                height: "calc(100% - 50px)",
-                color: "#3BB4A1",
-                padding: "20px",
-                overflowY: "auto",
-                position: "relative",
-              }}
-            >
-              {selectedChat ? (
-                <ScrollableFeed forceScroll="true">
-                  {chatMessages.map((message, index) => {
-                    // console.log("user:", user._id);
-                    // console.log("sender:", message.sender);
-                    return (
-                      <div
-                        key={index}
-                        style={{
-                          display: "flex",
-                          justifyContent: message.sender._id == user._id ? "flex-end" : "flex-start",
-                          marginBottom: "10px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            backgroundColor: message.sender._id === user._id ? "#3BB4A1" : "#2d2d2d",
-                            color: "#ffffff",
-                            padding: "10px",
-                            borderRadius: "10px",
-                            maxWidth: "70%",
-                            textAlign: message.sender._id == user._id ? "right" : "left",
-                          }}
-                        >
-                          {message.content}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </ScrollableFeed>
-              ) : (
-                <>
-                  {chatMessageLoading ? (
-                    <div className="row h-100 d-flex justify-content-center align-items-center">
-                      <Spinner animation="border" variant="primary" />
-                    </div>
-                  ) : (
-                    <div className="row w-100 h-100 d-flex justify-content-center align-items-center">
-                      <h3 className="row w-100 d-flex justify-content-center align-items-center">
-                        Select a chat to start messaging
-                      </h3>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Chat Input */}
-            {selectedChat && (
-              <div
-                style={{
-                  position: "absolute",
-                  bottom: "0",
-                  left: "0",
-                  right: "0",
-                  padding: "10px",
-                  borderTop: "1px solid #2d2d2d",
-                  display: "flex",
-                  alignItems: "center",
-                }}
-              >
-                <input
-                  type="text"
-                  placeholder="Type your message..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  style={{
-                    flex: "1",
-                    padding: "10px",
-                    borderRadius: "5px",
-                    marginRight: "10px",
-                    border: "1px solid #2d2d2d",
-                  }}
-                />
-                <Button variant="success" style={{ padding: "10px 20px", borderRadius: "5px" }} onClick={sendMessage}>
-                  Send
-                </Button>
-              </div>
-            )}
-          </div>
+            />
+          ))}
         </div>
       </div>
 
-      {/* Schedule Video Call Modal */}
-      {scheduleModalShow && (
-        <div
-          style={{
-            position: "fixed",
-            top: "0",
-            left: "0",
-            width: "100%",
-            height: "100%",
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            zIndex: "500",
-          }}
+      <div className="chats-layout">
+        {/* Left Sidebar - Chat List */}
+        <motion.div 
+          className="chats-sidebar"
+          initial={{ x: -300, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <div
-            style={{
-              position: "absolute",
-              top: "50%",
-              left: "50%",
-              transform: "translate(-50%, -50%)",
-              backgroundColor: "#2d2d2d",
-              color: "#3BB4A1",
-              padding: "50px",
-              borderRadius: "10px",
-              zIndex: "1001",
-            }}
-          >
-            <h3>Request a Meeting</h3>
-            <Form>
-              <Form.Group controlId="formDate" style={{ marginBottom: "20px", zIndex: "1001" }}>
-                <Form.Label>Preferred Date</Form.Label>
-                <Form.Control
-                  type="date"
-                  value={scheduleForm.date}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, date: e.target.value })}
-                />
-              </Form.Group>
-
-              <Form.Group controlId="formTime" style={{ marginBottom: "20px", zIndex: "1001" }}>
-                <Form.Label>Preferred Time</Form.Label>
-                <Form.Control
-                  type="time"
-                  value={scheduleForm.time}
-                  onChange={(e) => setScheduleForm({ ...scheduleForm, time: e.target.value })}
-                />
-              </Form.Group>
-
-              <Button
-                variant="success"
-                type="submit"
-                onClick={async (e) => {
-                  e.preventDefault();
-                  if (scheduleForm.date === "" || scheduleForm.time === "") {
-                    toast.error("Please fill all the fields");
-                    return;
-                  }
-
-                  scheduleForm.username = selectedChat.username;
-                  try {
-                    const { data } = await axios.post("/user/sendScheduleMeet", scheduleForm);
-                    toast.success("Request mail has been sent successfully!");
-                    setScheduleForm({
-                      date: "",
-                      time: "",
-                    });
-                  } catch (error) {
-                    console.log(error);
-                    if (error?.response?.data?.message) {
-                      toast.error(error.response.data.message);
-                      if (error.response.data.message === "Please Login") {
-                        localStorage.removeItem("userInfo");
-                        setUser(null);
-                        await axios.get("/auth/logout");
-                        navigate("/login");
-                      }
-                    } else {
-                      toast.error("Something went wrong");
-                    }
-                  }
-                  setScheduleModalShow(false);
-                }}
-              >
-                Submit
-              </Button>
-              <Button variant="danger" onClick={() => setScheduleModalShow(false)} style={{ marginLeft: "10px" }}>
-                Cancel
-              </Button>
-            </Form>
+          {/* Header */}
+          <div className="sidebar-header">
+            <h2 className="sidebar-title">
+              <span className="title-icon">💬</span>
+              Messages
+            </h2>
           </div>
-        </div>
-      )}
+
+          {/* Tabs */}
+          <div className="chats-tabs">
+            <motion.button
+              className={`tab-button ${showChatHistory ? 'active' : ''}`}
+              onClick={() => handleTabClick("chat")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <span className="tab-icon">📱</span>
+              Chat History
+            </motion.button>
+            <motion.button
+              className={`tab-button ${showRequests ? 'active' : ''}`}
+              onClick={() => handleTabClick("requests")}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <span className="tab-icon">📨</span>
+              Requests
+            </motion.button>
+          </div>
+
+          {/* Chat/Request List */}
+          <div className="chats-list-container">
+            <AnimatePresence mode="wait">
+              {showChatHistory ? (
+                <motion.div
+                  key="chats"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="chats-list"
+                >
+                  {chatLoading ? (
+                    <div className="loading-container">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="loading-spinner"
+                      />
+                      <p>Loading chats...</p>
+                    </div>
+                  ) : chats.length === 0 ? (
+                    <div className="empty-state">
+                      <div className="empty-icon">💭</div>
+                      <h3>No chats yet</h3>
+                      <p>Start connecting with other users to see your chats here!</p>
+                    </div>
+                  ) : (
+                    chats.map((chat, index) => (
+                      <motion.div
+                        key={chat.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className={`chat-item ${selectedChat?.id === chat.id ? 'active' : ''}`}
+                        onClick={() => handleChatClick(chat.id)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div className="chat-avatar">
+                          <img 
+                            src={chat.picture} 
+                            alt={chat.name}
+                            onError={(e) => {
+                              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(chat.name)}&background=667eea&color=fff&size=150`;
+                            }}
+                          />
+                          <div className="online-indicator"></div>
+                        </div>
+                        <div className="chat-info">
+                          <h4 className="chat-name">{chat.name}</h4>
+                          <p className="chat-username">@{chat.username}</p>
+                        </div>
+                        <div className="chat-actions">
+                          <motion.div
+                            className="chat-dot"
+                            animate={{ scale: [1, 1.2, 1] }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                          />
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="requests"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="requests-list"
+                >
+                  {requestLoading ? (
+                    <div className="loading-container">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="loading-spinner"
+                      />
+                      <p>Loading requests...</p>
+                    </div>
+                  ) : requests.length === 0 ? (
+                    <div className="empty-state">
+                      <div className="empty-icon">📬</div>
+                      <h3>No requests</h3>
+                      <p>You don't have any pending requests at the moment.</p>
+                    </div>
+                  ) : (
+                    requests.map((request, index) => (
+                      <motion.div
+                        key={request.id || request._id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                        className="request-item"
+                        onClick={() => handleRequestClick(request)}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        <div className="request-avatar">
+                          <img 
+                            src={request.picture} 
+                            alt={request.name}
+                            onError={(e) => {
+                              e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(request.name)}&background=667eea&color=fff&size=150`;
+                            }}
+                          />
+                        </div>
+                        <div className="request-info">
+                          <h4 className="request-name">{request.name}</h4>
+                          <p className="request-status">{request.status || 'Pending'}</p>
+                        </div>
+                        {(request.senderId === user?._id && request.status === 'Pending') && (
+                          <motion.button
+                            className="delete-request-btn"
+                            onClick={(e) => { e.stopPropagation(); handleRequestDelete(request._id); }}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            🗑️
+                          </motion.button>
+                        )}
+                      </motion.div>
+                    ))
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        {/* Right Side - Chat Area */}
+        <motion.div 
+          className="chat-area"
+          initial={{ x: 300, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
+        >
+          {selectedChat ? (
+            <>
+              {/* Chat Header */}
+              <motion.div 
+                className="chat-header"
+                initial={{ y: -50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.4 }}
+              >
+                <div className="chat-user-info">
+                  <div className="chat-user-avatar">
+                    <img 
+                      src={selectedChat.picture} 
+                      alt={selectedChat.name}
+                      onError={(e) => {
+                        e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedChat.name)}&background=667eea&color=fff&size=150`;
+                      }}
+                    />
+                    <div className="user-status">
+                      <div className="status-dot online"></div>
+                    </div>
+                  </div>
+                  <div className="chat-user-details">
+                    <h3 className="chat-user-name">{selectedChat.name}</h3>
+                    <p className="chat-user-status">Online</p>
+                  </div>
+                </div>
+                <div className="chat-actions">
+                  <motion.button
+                    className="video-call-btn"
+                    onClick={handleScheduleClick}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <span className="btn-icon">📹</span>
+                    Video Call
+                  </motion.button>
+                </div>
+              </motion.div>
+
+              {/* Messages Area */}
+              <div className="messages-container">
+                <ScrollableFeed forceScroll="true">
+                  <AnimatePresence>
+                    {chatMessages.map((message, index) => (
+                      <motion.div
+                        key={index}
+                        initial={{ opacity: 0, y: 20, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={{ duration: 0.3, delay: index * 0.1 }}
+                        className={`message-wrapper ${message.sender._id === user._id ? 'sent' : 'received'}`}
+                      >
+                        <div className="message-bubble">
+                          <p className="message-text">{message.content}</p>
+                          <span className="message-time">
+                            {new Date(message.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </ScrollableFeed>
+              </div>
+
+              {/* Message Input */}
+              <motion.div 
+                className="message-input-container"
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.3 }}
+              >
+                <div className="input-wrapper">
+                  <input
+                    type="text"
+                    placeholder="Type your message..."
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                    className="message-input"
+                  />
+                  <motion.button
+                    className="send-button"
+                    onClick={sendMessage}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    disabled={!message.trim()}
+                  >
+                    <span className="send-icon">📤</span>
+                  </motion.button>
+                </div>
+              </motion.div>
+            </>
+          ) : (
+            <motion.div 
+              className="welcome-screen"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5 }}
+            >
+              <div className="welcome-content">
+                <motion.div
+                  className="welcome-icon"
+                  animate={{ 
+                    y: [0, -10, 0],
+                    rotate: [0, 5, -5, 0]
+                  }}
+                  transition={{ 
+                    duration: 3,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                >
+                  💬
+                </motion.div>
+                <h2>Welcome to SkillSwap Chat</h2>
+                <p>Select a conversation from the sidebar to start messaging</p>
+                <div className="welcome-features">
+                  <div className="feature">
+                    <span className="feature-icon">🚀</span>
+                    <span>Real-time messaging</span>
+                  </div>
+                  <div className="feature">
+                    <span className="feature-icon">🔒</span>
+                    <span>Secure conversations</span>
+                  </div>
+                  <div className="feature">
+                    <span className="feature-icon">📹</span>
+                    <span>Video call support</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </motion.div>
+      </div>
+
+      {/* Request Modal */}
+      <AnimatePresence>
+        {requestModalShow && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setRequestModalShow(false)}
+          >
+            <motion.div
+              className="modal-content"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h2>Confirm your choice?</h2>
+                              {selectedRequest && (
+                  <RequestCard
+                    name={selectedRequest?.name}
+                    skills={[selectedRequest?.offeredSkill, selectedRequest?.requestedSkill].filter(Boolean)}
+                    rating="4"
+                    picture={selectedRequest?.picture}
+                    username={selectedRequest?.username}
+                    onClose={() => setSelectedRequest(null)}
+                  />
+                )}
+              <div className="modal-actions">
+                <motion.button
+                  className="accept-btn"
+                  onClick={handleRequestAccept}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {acceptRequestLoading ? (
+                    <div className="loading-spinner-small" />
+                  ) : (
+                    "Accept!"
+                  )}
+                </motion.button>
+                <motion.button
+                  className="reject-btn"
+                  onClick={handleRequestReject}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {acceptRequestLoading ? (
+                    <div className="loading-spinner-small" />
+                  ) : (
+                    "Reject"
+                  )}
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Schedule Modal */}
+      <AnimatePresence>
+        {scheduleModalShow && (
+          <motion.div
+            className="modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setScheduleModalShow(false)}
+          >
+            <motion.div
+              className="schedule-modal"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3>Request a Meeting</h3>
+              <Form>
+                <Form.Group controlId="formDate" className="form-group">
+                  <Form.Label>Preferred Date</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={scheduleForm.date}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, date: e.target.value })}
+                    className="form-control-custom"
+                  />
+                </Form.Group>
+
+                <Form.Group controlId="formTime" className="form-group">
+                  <Form.Label>Preferred Time</Form.Label>
+                  <Form.Control
+                    type="time"
+                    value={scheduleForm.time}
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, time: e.target.value })}
+                    className="form-control-custom"
+                  />
+                </Form.Group>
+
+                <div className="modal-actions">
+                  <motion.button
+                    className="submit-btn"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      if (scheduleForm.date === "" || scheduleForm.time === "") {
+                        toast.error("Please fill all the fields");
+                        return;
+                      }
+
+                      scheduleForm.username = selectedChat.username;
+                      try {
+                        const { data } = await axios.post("/user/sendScheduleMeet", scheduleForm);
+                        toast.success("Request mail has been sent successfully!");
+                        setScheduleForm({
+                          date: "",
+                          time: "",
+                        });
+                      } catch (error) {
+                        console.log(error);
+                        if (error?.response?.data?.message) {
+                          toast.error(error.response.data.message);
+                          if (error.response.data.message === "Please Login") {
+                            localStorage.removeItem("userInfo");
+                            setUser(null);
+                            await axios.get("/auth/logout");
+                            navigate("/login");
+                          }
+                        } else {
+                          toast.error("Something went wrong");
+                        }
+                      }
+                      setScheduleModalShow(false);
+                    }}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Submit
+                  </motion.button>
+                  <motion.button
+                    className="cancel-btn"
+                    onClick={() => setScheduleModalShow(false)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    Cancel
+                  </motion.button>
+                </div>
+              </Form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

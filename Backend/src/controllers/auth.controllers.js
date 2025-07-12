@@ -39,6 +39,10 @@ export const handleGoogleLoginCallback = asyncHandler(async (req, res) => {
   const existingUser = await User.findOne({ email: req.user._json.email });
 
   if (existingUser) {
+    // Update last login time
+    existingUser.lastLoginAt = new Date();
+    await existingUser.save();
+    
     const jwtToken = generateJWTToken_username(existingUser);
     const expiryDate = new Date(Date.now() + 1 * 60 * 60 * 1000);
     res.cookie("accessToken", jwtToken, { httpOnly: true, expires: expiryDate, secure: false });

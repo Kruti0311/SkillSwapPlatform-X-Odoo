@@ -22,7 +22,8 @@ const Profile = () => {
       setLoading(true);
       try {
         const { data } = await axios.get(`/user/registered/getDetails/${username}`);
-        console.log(data.data);
+        console.log("Profile Data:", data.data);
+        console.log("Profile User ID:", data.data._id);
         setProfileUser(data.data);
       } catch (error) {
         console.log(error);
@@ -50,10 +51,18 @@ const Profile = () => {
 
   const connectHandler = async () => {
     console.log("Connect");
+    console.log("Profile User:", profileUser);
+    console.log("Profile User ID:", profileUser?._id);
+
+    if (!profileUser || !profileUser._id) {
+      toast.error("Cannot connect to this profile. Please try refreshing the page.");
+      return;
+    }
+
     try {
       setConnectLoading(true);
       const { data } = await axios.post(`/request/create`, {
-        receiverID: profileUser._id,
+        receiverID: profileUser._id, // Use _id to identify the receiver
       });
 
       console.log(data);
@@ -99,6 +108,18 @@ const Profile = () => {
                 <div className="misc">
                   <h1 className="profile-name" style={{ marginLeft: "2rem" }}>
                     {profileUser?.name}
+                    {profileUser?.visibility === "private" && (
+                      <span
+                        style={{
+                          marginLeft: "10px",
+                          fontSize: "0.6em",
+                          color: "#999",
+                          fontWeight: "normal",
+                        }}
+                      >
+                        🔒 Private Profile
+                      </span>
+                    )}
                   </h1>
                   {/* Rating */}
                   <div className="rating" style={{ marginLeft: "2rem" }}>
@@ -111,32 +132,24 @@ const Profile = () => {
                     {/* Rating out of 5 */}
                     <span className="rating-value">{profileUser?.rating ? profileUser?.rating : "5"}</span>
                   </div>
-                  {/* Connect and Report Buttons */}
-                  {
-                    // If the user is the same as the logged in user, don't show the connect and report buttons
-                    user?.username !== username && (
-                      <div className="buttons">
-                        <button
-                          className="connect-button"
-                          onClick={profileUser?.status === "Connect" ? connectHandler : undefined}
-                        >
-                          {connectLoading ? (
-                            <>
-                              <Spinner animation="border" variant="light" size="sm" style={{ marginRight: "0.5rem" }} />
-                            </>
-                          ) : (
-                            profileUser?.status
-                          )}
-                        </button>
-                        <Link to={`/report/${profileUser.username}`}>
-                          <button className="report-button">Report</button>
-                        </Link>
-                        <Link to={`/rating/${profileUser.username}`}>
-                          <button className="report-button bg-success">Rate</button>
-                        </Link>
-                      </div>
-                    )
-                  }
+                  <button
+                    className="connect-button"
+                    onClick={profileUser?.status === "Connect" ? connectHandler : undefined}
+                    disabled={connectLoading}
+                    title={
+                      profileUser?.visibility === "private" && profileUser?.status === "Connect"
+                        ? "Send connection request to private profile"
+                        : ""
+                    }
+                  >
+                    {connectLoading ? (
+                      <>
+                        <Spinner animation="border" variant="light" size="sm" style={{ marginRight: "0.5rem" }} />
+                      </>
+                    ) : (
+                      profileUser?.status
+                    )}
+                  </button>
                 </div>
               </div>
               <div className="edit-links">
@@ -176,17 +189,51 @@ const Profile = () => {
             {/* Bio */}
             <h2>Bio</h2>
             <p className="bio">{profileUser?.bio}</p>
+            {(profileUser?.availability && profileUser.availability.length > 0) && (
+              <div style={{ margin: '1rem 0', color: '#3BB4A1', fontWeight: 500 }}>
+                <strong>Availability:</strong> {profileUser.availability.join(', ')}
+              </div>
+            )}
+            {(profileUser?.customTimeSlots && profileUser.customTimeSlots.length > 0) && (
+              <div style={{ margin: '0.5rem 0 1rem 0', color: '#3BB4A1', fontWeight: 500 }}>
+                <strong>Custom Time Slots:</strong> {profileUser.customTimeSlots.map(slot => `${slot.from}–${slot.to}`).join(', ')}
+              </div>
+            )}
+            {profileUser?.visibility === "private" && profileUser?.bio === "This profile is private" && (
+              <div
+                style={{
+                  backgroundColor: "#f8f9fa",
+                  padding: "15px",
+                  borderRadius: "5px",
+                  marginBottom: "20px",
+                  border: "1px solid #dee2e6",
+                }}
+              >
+                <p style={{ margin: 0, color: "#6c757d" }}>
+                  <strong>🔒 Private Profile:</strong> This profile is private. Send a connection request to see more
+                  information.
+                </p>
+              </div>
+            )}
 
             {/* Skills */}
             <div className="skills">
               <h2>Skills Proficient At</h2>
               {/* Render skill boxes here */}
               <div className="skill-boxes">
-                {profileUser?.skillsProficientAt.map((skill, index) => (
-                  <div className="skill-box" style={{ fontSize: "16px" }} key={index}>
-                    {skill}
+                {profileUser?.skillsProficientAt && profileUser?.skillsProficientAt.length > 0 ? (
+                  profileUser?.skillsProficientAt.map((skill, index) => (
+                    <div className="skill-box" style={{ fontSize: "16px" }} key={index}>
+                      {skill}
+                    </div>
+                  ))
+                ) : profileUser?.visibility === "private" && profileUser?.bio === "This profile is private" ? (
+                  <div style={{ color: "#6c757d", fontStyle: "italic" }}>
+                    Skills information is private. Connect to view skills.
                   </div>
-                ))}
+                ) : (
+                  <div style={{ color: "#6c757d", fontStyle: "italic" }}>No skills listed yet.</div>
+                )}
               </div>
             </div>
 
@@ -196,8 +243,7 @@ const Profile = () => {
 
               <div className="education-boxes">
                 {/* Render education boxes here */}
-                {profileUser &&
-                  profileUser?.education &&
+                {profileUser && profileUser?.education && profileUser?.education.length > 0 ? (
                   profileUser?.education.map((edu, index) => (
                     <Box
                       key={index}
@@ -207,35 +253,45 @@ const Profile = () => {
                       desc={edu?.description}
                       score={edu?.score}
                     />
-                  ))}
+                  ))
+                ) : profileUser?.visibility === "private" && profileUser?.bio === "This profile is private" ? (
+                  <div style={{ color: "#6c757d", fontStyle: "italic", textAlign: "center" }}>
+                    Education information is private. Connect to view education details.
+                  </div>
+                ) : (
+                  <div style={{ color: "#6c757d", fontStyle: "italic", textAlign: "center" }}>
+                    No education information available.
+                  </div>
+                )}
               </div>
             </div>
 
             {/* Projects */}
-            {profileUser?.projects && profileUser?.projects.length > 0 && (
-              <div className="projects">
-                <h2>Projects</h2>
+            <div className="projects">
+              <h2>Projects</h2>
 
-                <div className="project-boxes">
-                  {
-                    // Render project boxes here
-                    profileUser &&
-                      profileUser?.projects &&
-                      profileUser?.projects.map((project, index) => (
-                        <Box
-                          key={index}
-                          head={project?.title}
-                          date={convertDate(project?.startDate) + " - " + convertDate(project?.endDate)}
-                          desc={project?.description}
-                          skills={project?.techStack}
-                        />
-                      ))
-                  }
-
-                  {/* Render project boxes here */}
-                </div>
+              <div className="project-boxes">
+                {profileUser && profileUser?.projects && profileUser?.projects.length > 0 ? (
+                  profileUser?.projects.map((project, index) => (
+                    <Box
+                      key={index}
+                      head={project?.title}
+                      date={convertDate(project?.startDate) + " - " + convertDate(project?.endDate)}
+                      desc={project?.description}
+                      skills={project?.techStack}
+                    />
+                  ))
+                ) : profileUser?.visibility === "private" && profileUser?.bio === "This profile is private" ? (
+                  <div style={{ color: "#6c757d", fontStyle: "italic", textAlign: "center" }}>
+                    Project information is private. Connect to view projects.
+                  </div>
+                ) : (
+                  <div style={{ color: "#6c757d", fontStyle: "italic", textAlign: "center" }}>
+                    No projects available.
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </>
         )}
       </div>

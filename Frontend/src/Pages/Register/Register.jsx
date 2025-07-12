@@ -23,6 +23,7 @@ const Register = () => {
     portfolioLink: "",
     githubLink: "",
     linkedinLink: "",
+    visibility: "public",
     skillsProficientAt: [],
     skillsToLearn: [],
     education: [
@@ -38,10 +39,15 @@ const Register = () => {
     ],
     bio: "",
     projects: [],
+    availability: [],
+    customTimeSlots: [], // [{from: '', to: ''}]
+    location: "",
+    picture: "",
   });
   const [skillsProficientAt, setSkillsProficientAt] = useState("Select some skill");
   const [skillsToLearn, setSkillsToLearn] = useState("Select some skill");
   const [techStack, setTechStack] = useState([]);
+  const [newTimeSlot, setNewTimeSlot] = useState({ from: '', to: '' });
 
   const [activeKey, setActiveKey] = useState("registration");
 
@@ -87,6 +93,10 @@ const Register = () => {
           education: edu,
           bio: data?.data?.bio,
           projects: proj ? proj : prevState.projects,
+          availability: data?.data?.availability || [],
+          customTimeSlots: data?.data?.customTimeSlots || [],
+          location: data?.data?.location || "",
+          picture: data?.data?.picture || "",
         }));
       } catch (error) {
         console.log(error);
@@ -114,7 +124,12 @@ const Register = () => {
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
 
-    if (type === "checkbox") {
+    if (type === "checkbox" && name === "availability") {
+      setForm((prevState) => ({
+        ...prevState,
+        availability: checked ? [...prevState.availability, value] : prevState.availability.filter((item) => item !== value),
+      }));
+    } else if (type === "checkbox") {
       setForm((prevState) => ({
         ...prevState,
         [name]: checked ? [...prevState[name], value] : prevState[name].filter((item) => item !== value),
@@ -130,6 +145,18 @@ const Register = () => {
       }));
     }
     // console.log("Form: ", form);
+  };
+  const handleCustomTimeSlotChange = (e) => {
+    const { name, value } = e.target;
+    setNewTimeSlot((prev) => ({ ...prev, [name]: value }));
+  };
+  const handleAddCustomTimeSlot = () => {
+    if (!newTimeSlot.from || !newTimeSlot.to) return;
+    setForm((prev) => ({ ...prev, customTimeSlots: [...prev.customTimeSlots, newTimeSlot] }));
+    setNewTimeSlot({ from: '', to: '' });
+  };
+  const handleRemoveCustomTimeSlot = (idx) => {
+    setForm((prev) => ({ ...prev, customTimeSlots: prev.customTimeSlots.filter((_, i) => i !== idx) }));
   };
 
   const handleAddSkill = (e) => {
@@ -388,9 +415,14 @@ const Register = () => {
     const check1 = validateRegForm();
     const check2 = validateEduForm();
     const check3 = validateAddForm();
+    if (!form.picture || !form.picture.startsWith('http')) {
+      toast.error('Please upload a profile photo before submitting!');
+      return;
+    }
     if (check1 && check2 && check3) {
       setSaveLoading(true);
       try {
+        console.log("Submitting form with picture:", form.picture);
         const { data } = await axios.post("/user/registerUser", form);
         toast.success("Registration Successful");
         console.log("Data: ", data.data);
@@ -404,6 +436,35 @@ const Register = () => {
         }
       } finally {
         setSaveLoading(false);
+      }
+    }
+  };
+
+  // Add image upload handler
+  const handleProfilePhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const data = new FormData();
+    data.append("picture", file);
+    
+    try {
+      toast.info("Uploading your pic please wait upload confirmation..");
+      const response = await axios.post("/user/uploadPicture", data);
+      toast.success("Pic uploaded successfully");
+      console.log("Pic url:", response.data);
+      console.log("Setting picture to:", response.data.data.url);
+      setForm((prev) => ({ ...prev, picture: response.data.data.url }));
+    } catch (error) {
+      console.log(error);
+      if (error?.response?.data?.message) {
+        toast.error(error.response.data.message);
+        if (error.response.data.message === "Please Login") {
+          localStorage.removeItem("userInfo");
+          setUser(null);
+          await axios.get("/auth/logout");
+          navigate("/login");
+        }
       }
     }
   };
@@ -485,27 +546,7 @@ const Register = () => {
                   placeholder="Enter your username"
                 />
               </div>
-              {/* Linkedin Profile Link*/}
-              <div>
-                <label className="mt-3" style={{ color: "#3BB4A1" }}>
-                  Linkedin Link
-                </label>
-                <br />
-                <input
-                  type="text"
-                  name="linkedinLink"
-                  value={form.linkedinLink}
-                  onChange={handleInputChange}
-                  style={{
-                    borderRadius: "5px",
-                    border: "1px solid #3BB4A1",
-                    padding: "5px",
-                    width: "100%",
-                  }}
-                  placeholder="Enter your Linkedin link"
-                />
-              </div>
-              {/* Github Profile Link*/}
+              {/* Add Github, Linkedin, and Portfolio link fields before location and profile photo */}
               <div>
                 <label className="mt-3" style={{ color: "#3BB4A1" }}>
                   Github Link
@@ -525,7 +566,26 @@ const Register = () => {
                   placeholder="Enter your Github link"
                 />
               </div>
-              {/* Portfolio Link */}
+              {/* Add Linkedin, Portfolio, and Profile Photo fields together */}
+              <div>
+                <label className="mt-3" style={{ color: "#3BB4A1" }}>
+                  Linkedin Link
+                </label>
+                <br />
+                <input
+                  type="text"
+                  name="linkedinLink"
+                  value={form.linkedinLink}
+                  onChange={handleInputChange}
+                  style={{
+                    borderRadius: "5px",
+                    border: "1px solid #3BB4A1",
+                    padding: "5px",
+                    width: "100%",
+                  }}
+                  placeholder="Enter your Linkedin link"
+                />
+              </div>
               <div>
                 <label className="mt-3" style={{ color: "#3BB4A1" }}>
                   Portfolio Link
@@ -544,6 +604,57 @@ const Register = () => {
                   }}
                   placeholder="Enter your portfolio link"
                 />
+              </div>
+              <div>
+                <label className="mt-3" style={{ color: "#3BB4A1" }}>
+                  Profile Photo
+                </label>
+                <br />
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePhotoUpload}
+                  style={{ marginBottom: '0.5rem' }}
+                />
+                {form.picture && (
+                  <img src={form.picture} alt="Profile Preview" style={{ width: 60, height: 60, borderRadius: '50%', display: 'block', marginTop: '0.5rem' }} />
+                )}
+              </div>
+              {/* --- AVAILABILITY SECTION: Always visible, styled for clarity --- */}
+              <div style={{ border: '2px solid #3BB4A1', background: '#f8f9fa', borderRadius: '8px', padding: '1rem', margin: '1.5rem 0' }}>
+                <Form.Group>
+                  <Form.Label style={{ color: "#3BB4A1", fontWeight: 600, fontSize: '1.1rem' }}>Availability</Form.Label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem" }}>
+                    {['Weekdays', 'Weekends', 'Mornings', 'Afternoons', 'Evenings', 'Nights', 'Early Morning', 'Late Morning', 'Afternoon', 'Early Evening', 'Late Evening', 'Night', 'Late Night'].map((slot) => (
+                      <Form.Check
+                        key={slot}
+                        type="checkbox"
+                        label={slot}
+                        name="availability"
+                        value={slot}
+                        checked={form.availability.includes(slot)}
+                  onChange={handleInputChange}
+                      />
+                    ))}
+                  </div>
+                  <div style={{ marginTop: '1rem' }}>
+                    <strong>Custom Time Slots:</strong>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginTop: '0.5rem' }}>
+                      <Form.Control type="time" name="from" value={newTimeSlot.from} onChange={handleCustomTimeSlotChange} style={{ width: '120px' }} />
+                      <span>to</span>
+                      <Form.Control type="time" name="to" value={newTimeSlot.to} onChange={handleCustomTimeSlotChange} style={{ width: '120px' }} />
+                      <button type="button" className="btn btn-success btn-sm" onClick={handleAddCustomTimeSlot}>Add</button>
+                    </div>
+                    <ul style={{ marginTop: '0.5rem', paddingLeft: '1rem' }}>
+                      {form.customTimeSlots.map((slot, idx) => (
+                        <li key={idx} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          {slot.from} - {slot.to}
+                          <button type="button" className="btn btn-danger btn-sm" onClick={() => handleRemoveCustomTimeSlot(idx)}>Remove</button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </Form.Group>
               </div>
               {/* Skills Proficient At */}
               <div>
@@ -1059,7 +1170,7 @@ const Register = () => {
                     className="link"
                   >
                     <span style={{ flex: 1, fontWeight: "bold", color: "#3BB4A1" }}>Portfolio Link:</span>
-                    <span style={{ flex: 2 }}>{form.portfolioLink || "Yet to be filled"}</span>
+                    <span style={{ flex: 2 }}>{form.portfolioLink ? <a href={form.portfolioLink} target="_blank" rel="noopener noreferrer">{form.portfolioLink}</a> : "Yet to be filled"}</span>
                   </div>
                   <div
                     style={{
@@ -1072,7 +1183,7 @@ const Register = () => {
                     className="link"
                   >
                     <span style={{ flex: 1, fontWeight: "bold", color: "#3BB4A1" }}>Github Link:</span>
-                    <span style={{ flex: 2 }}>{form.githubLink || "Yet to be filled"}</span>
+                    <span style={{ flex: 2 }}>{form.githubLink ? <a href={form.githubLink} target="_blank" rel="noopener noreferrer">{form.githubLink}</a> : "Yet to be filled"}</span>
                   </div>
                   <div
                     style={{
@@ -1086,8 +1197,7 @@ const Register = () => {
                     className="link"
                   >
                     <span style={{ flex: 1, fontWeight: "bold", color: "#3BB4A1" }}>Linkedin Link:</span>
-                    <span
-                      style={{
+                    <span style={{
                         width: "70vw",
                         alignItems: "center",
                         flex: 2,
@@ -1095,10 +1205,35 @@ const Register = () => {
                         whiteSpace: "nowrap",
                         textOverflow: "ellipsis",
                         marginBottom: "1.5rem",
-                      }}
-                    >
-                      {form.linkedinLink || "Yet to be filled"}
+                    }}>
+                      {form.linkedinLink ? <a href={form.linkedinLink} target="_blank" rel="noopener noreferrer">{form.linkedinLink}</a> : "Yet to be filled"}
                     </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      width: "70vw",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: "1.5rem",
+                    }}
+                    className="link"
+                  >
+                    <span style={{ flex: 1, fontWeight: "bold", color: "#3BB4A1" }}>Location:</span>
+                    <span style={{ flex: 2 }}>{form.location || "Yet to be filled"}</span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      width: "70vw",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: "1.5rem",
+                    }}
+                    className="link"
+                  >
+                    <span style={{ flex: 1, fontWeight: "bold", color: "#3BB4A1" }}>Profile Photo:</span>
+                    <span style={{ flex: 2 }}>{form.picture ? <img src={form.picture} alt="Profile" style={{ width: 60, height: 60, borderRadius: '50%' }} /> : "Yet to be filled"}</span>
                   </div>
                   <div
                     style={{
@@ -1126,7 +1261,16 @@ const Register = () => {
                     <span style={{ flex: 1, fontWeight: "bold", color: "#3BB4A1" }}>Skills To Learn:</span>
                     <span style={{ flex: 2 }}>{form.skillsToLearn.join(", ") || "Yet to be filled"}</span>
                   </div>
-
+                  {form.availability && form.availability.length > 0 && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <strong>Availability:</strong> {form.availability.join(', ')}
+                    </div>
+                  )}
+                  {form.customTimeSlots && form.customTimeSlots.length > 0 && (
+                    <div style={{ marginTop: '1rem' }}>
+                      <strong>Custom Time Slots:</strong> {form.customTimeSlots.map(slot => `${slot.from}–${slot.to}`).join(', ')}
+                    </div>
+                  )}
                   <div
                     style={{
                       display: "flex",

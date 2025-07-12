@@ -1,0 +1,514 @@
+.custom-navbar {
+  width: 100%;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.2rem 3vw;
+  background: rgba(30, 40, 60, 0.85);
+  backdrop-filter: blur(12px);
+  box-shadow: 0 4px 32px #00e6ff22;
+  border-bottom: 1.5px solid #222c3a44;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated background gradient */
+.custom-navbar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, 
+    rgba(0, 230, 255, 0.1) 0%, 
+    rgba(127, 92, 255, 0.1) 50%, 
+    rgba(0, 230, 255, 0.1) 100%);
+  background-size: 200% 100%;
+  animation: gradientShift 8s ease-in-out infinite;
+  z-index: -1;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+/* Floating particles in navbar */
+.custom-navbar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 50%, rgba(0, 230, 255, 0.1) 1px, transparent 1px),
+    radial-gradient(circle at 80% 20%, rgba(127, 92, 255, 0.1) 1px, transparent 1px),
+    radial-gradient(circle at 40% 80%, rgba(0, 230, 255, 0.05) 1px, transparent 1px);
+  background-size: 100px 100px, 150px 150px, 80px 80px;
+  animation: particleFloat 20s linear infinite;
+  z-index: -1;
+}
+
+@keyframes particleFloat {
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-100px); }
+}
+
+.navbar-logo {
+  font-size: 2rem;
+  font-weight: bold;
+  letter-spacing: 2px;
+  color: #00e6ff;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s ease;
+  position: relative;
+  text-shadow: 0 0 20px rgba(0, 230, 255, 0.5);
+}
+
+.navbar-logo::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #00e6ff, #7f5cff, #00e6ff);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: logoGlow 3s ease-in-out infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.navbar-logo:hover::before {
+  opacity: 1;
+}
+
+@keyframes logoGlow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.navbar-logo:hover {
+  color: #7f5cff;
+  transform: scale(1.05);
+  text-shadow: 0 0 30px rgba(127, 92, 255, 0.8);
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 2.5rem;
+}
+
+.nav-link-item {
+  position: relative;
+  color: #fff;
+  text-decoration: none;
+  font-size: 1.1rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  padding: 0.2rem 0.5rem;
+  transition: all 0.3s ease;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.nav-link-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.nav-link-item:hover::before {
+  left: 100%;
+}
+
+.nav-link-item:hover .nav-link-label {
+  color: #00e6ff;
+  transform: translateY(-1px);
+}
+
+.nav-link-label {
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.nav-link-item::after {
+  content: "";
+  display: block;
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #00e6ff, #7f5cff);
+  border-radius: 2px;
+  transform: scaleX(0);
+  transition: transform 0.3s cubic-bezier(.4,2,.6,1);
+  box-shadow: 0 0 10px rgba(0, 230, 255, 0.5);
+}
+
+.nav-link-item:hover::after {
+  transform: scaleX(1);
+}
+
+.nav-badge {
+  background: linear-gradient(135deg, #e53935, #f44336);
+  color: #fff;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: bold;
+  padding: 2px 7px;
+  margin-left: 6px;
+  vertical-align: middle;
+  box-shadow: 0 0 8px #e5393555;
+  animation: badgePulse 2s ease-in-out infinite;
+  position: relative;
+}
+
+@keyframes badgePulse {
+  0%, 100% { 
+    transform: scale(1);
+    box-shadow: 0 0 8px #e5393555;
+  }
+  50% { 
+    transform: scale(1.1);
+    box-shadow: 0 0 15px #e5393588;
+  }
+}
+
+.nav-badge::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #e53935, #f44336, #e53935);
+  border-radius: 50%;
+  z-index: -1;
+  animation: badgeRotate 3s linear infinite;
+}
+
+@keyframes badgeRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+.nav-btn {
+  background: none;
+  border: none;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  padding: 0.5rem 1.3rem;
+  border-radius: 2rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 0 #00e6ff00;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+}
+
+.nav-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.nav-btn:hover::before {
+  left: 100%;
+}
+
+.nav-btn.login {
+  border: 1.5px solid #00e6ff;
+  background: rgba(0, 230, 255, 0.08);
+  color: #00e6ff;
+  backdrop-filter: blur(10px);
+}
+
+.nav-btn.cta {
+  background: linear-gradient(90deg, #00e6ff, #7f5cff);
+  color: #fff;
+  font-weight: bold;
+  box-shadow: 0 0 10px #00e6ff44;
+  position: relative;
+}
+
+.nav-btn.cta::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #7f5cff, #00e6ff, #7f5cff);
+  background-size: 200% 100%;
+  border-radius: 2rem;
+  z-index: -1;
+  animation: ctaGlow 3s ease-in-out infinite;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.nav-btn.cta:hover::after {
+  opacity: 1;
+}
+
+@keyframes ctaGlow {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.nav-btn:hover {
+  background: #00e6ff22;
+  color: #7f5cff;
+  box-shadow: 0 0 16px #00e6ff55;
+  transform: translateY(-2px);
+}
+
+.nav-btn.cta:hover {
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 8px 25px #00e6ff66;
+}
+
+.profile-dropdown-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.profile-avatar {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  background: rgba(0,0,0,0.12);
+  border-radius: 2rem;
+  padding: 0.2rem 0.8rem 0.2rem 0.2rem;
+  transition: all 0.3s ease;
+  gap: 0.5rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.profile-avatar:hover {
+  background: rgba(0, 230, 255, 0.1);
+  border-color: rgba(0, 230, 255, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(0, 230, 255, 0.2);
+}
+
+.profile-avatar img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #00e6ff;
+  margin-right: 0.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 0 10px rgba(0, 230, 255, 0.3);
+}
+
+.profile-avatar:hover img {
+  border-color: #7f5cff;
+  box-shadow: 0 0 15px rgba(127, 92, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.profile-name {
+  color: #fff;
+  font-weight: 500;
+  margin-right: 0.5rem;
+  transition: color 0.3s ease;
+}
+
+.profile-avatar:hover .profile-name {
+  color: #00e6ff;
+}
+
+.profile-caret {
+  color: #00e6ff;
+  font-size: 1.1rem;
+  margin-left: 0.2rem;
+  transition: all 0.3s ease;
+}
+
+.profile-avatar:hover .profile-caret {
+  color: #7f5cff;
+  transform: rotate(180deg);
+}
+
+.profile-dropdown {
+  position: absolute;
+  right: 0;
+  top: 120%;
+  min-width: 150px;
+  background: rgba(30, 40, 60, 0.98);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px #00e6ff33;
+  padding: 0.7rem 0.5rem;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  animation: fadeIn 0.3s;
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.animated-fade-in {
+  animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(-10px) scale(0.95);
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dropdown-item {
+  color: #fff;
+  padding: 0.7rem 1rem;
+  border-radius: 0.7rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.dropdown-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(0, 230, 255, 0.1), transparent);
+  transition: left 0.5s ease;
+}
+
+.dropdown-item:hover::before {
+  left: 100%;
+}
+
+.dropdown-item:hover {
+  background: linear-gradient(90deg, #00e6ff33, #7f5cff33);
+  color: #00e6ff;
+  transform: translateX(5px);
+  box-shadow: 0 2px 8px rgba(0, 230, 255, 0.2);
+}
+
+/* Active link indicator */
+.nav-link-item.active {
+  background: rgba(0, 230, 255, 0.1);
+  border: 1px solid rgba(0, 230, 255, 0.3);
+}
+
+.nav-link-item.active .nav-link-label {
+  color: #00e6ff;
+}
+
+.nav-link-item.active::after {
+  transform: scaleX(1);
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+  .navbar-links {
+    gap: 1.2rem;
+  }
+  .navbar-logo {
+    font-size: 1.3rem;
+  }
+  .nav-btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .custom-navbar {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem 2vw;
+    gap: 0.7rem;
+  }
+  .navbar-links {
+    gap: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .navbar-actions {
+    gap: 0.7rem;
+    width: 100%;
+    justify-content: space-between;
+  }
+  .nav-btn {
+    flex: 1;
+    text-align: center;
+    margin-left: 0;
+  }
+  .profile-dropdown {
+    right: -50%;
+    min-width: 120px;
+  }
+}
+
+/* Dark mode enhancements */
+@media (prefers-color-scheme: dark) {
+  .custom-navbar {
+    background: rgba(20, 30, 50, 0.9);
+  }
+  
+  .profile-dropdown {
+    background: rgba(20, 30, 50, 0.98);
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .custom-navbar {
+    background: rgba(0, 0, 0, 0.95);
+    border-bottom: 2px solid #00e6ff;
+  }
+  
+  .nav-link-item {
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .nav-btn {
+    border: 2px solid currentColor;
+  }
+} 

@@ -15,10 +15,6 @@ const userSchema = new Schema(
       type: String,
       required: true,
     },
-    location: {
-      type: String,
-      default: "",
-    },
     picture: {
       type: String,
       default: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcToK4qEfbnd-RN82wdL2awn_PMviy_pelocqQ",
@@ -27,18 +23,10 @@ const userSchema = new Schema(
       type: Number,
       default: 0,
     },
-    totalRatings: {
-      type: Number,
-      default: 0,
-    },
-    isPublic: {
-      type: Boolean,
-      default: true,
-    },
-    availability: {
-      type: [String],
-      enum: ["weekdays", "weekends", "evenings", "mornings", "afternoons"],
-      default: [],
+    visibility: {
+      type: String,
+      enum: ["public", "private"],
+      default: "public",
     },
     linkedinLink: {
       type: String,
@@ -80,7 +68,7 @@ const userSchema = new Schema(
         },
         endDate: {
           type: Date,
-          default: null, // or you can leave it undefined
+          default: null,
         },
         score: {
           type: Number,
@@ -126,8 +114,43 @@ const userSchema = new Schema(
         },
       },
     ],
+    availability: [
+      {
+        type: String,
+        default: "",
+      },
+    ],
+    customTimeSlots: [
+      {
+        from: {
+          type: String,
+          default: "",
+        },
+        to: {
+          type: String,
+          default: "",
+        },
+      },
+    ],
+    location: {
+      type: String,
+      default: "",
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    banned: {
+      type: Boolean,
+      default: false,
+    },
+    lastLoginAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
+
 
 export const User = mongoose.model("User", userSchema);
