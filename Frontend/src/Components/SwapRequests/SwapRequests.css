@@ -1,0 +1,327 @@
+.swap-requests {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.requests-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.requests-header h2 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 28px;
+  font-weight: 600;
+}
+
+.requests-header p {
+  margin: 0;
+  color: #666;
+  font-size: 16px;
+}
+
+.error-message {
+  background: #f8d7da;
+  color: #721c24;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #f5c6cb;
+}
+
+.requests-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 30px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.tab-btn {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 16px;
+  font-weight: 500;
+  color: #666;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.tab-btn:hover {
+  color: #007bff;
+}
+
+.tab-btn.active {
+  color: #007bff;
+  border-bottom-color: #007bff;
+}
+
+.requests-content {
+  min-height: 400px;
+}
+
+.no-requests {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-requests p {
+  font-size: 18px;
+  margin: 0;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+  font-size: 18px;
+}
+
+.request-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e9ecef;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.request-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.request-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-avatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #f8f9fa;
+}
+
+.user-info h4 {
+  margin: 0 0 5px 0;
+  color: #333;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.username {
+  margin: 0;
+  color: #007bff;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.status-badge {
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-badge.pending {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.status-badge.connected {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.status-badge.rejected {
+  background: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+.status-badge.completed {
+  background: #d1ecf1;
+  color: #0c5460;
+  border: 1px solid #bee5eb;
+}
+
+.swap-details {
+  margin-bottom: 15px;
+}
+
+.swap-info {
+  display: flex;
+  gap: 30px;
+  margin-bottom: 10px;
+}
+
+.skill-offer, .skill-request {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.skill {
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+  padding: 6px 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.request-message {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  border-left: 4px solid #007bff;
+}
+
+.request-message p {
+  margin: 0;
+  color: #333;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.request-date {
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+.request-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.accept-btn, .reject-btn, .delete-btn, .chat-btn, .complete-btn, .rate-btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.accept-btn {
+  background: #28a745;
+  color: white;
+}
+
+.accept-btn:hover {
+  background: #1e7e34;
+}
+
+.reject-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.reject-btn:hover {
+  background: #c82333;
+}
+
+.delete-btn {
+  background: #6c757d;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #545b62;
+}
+
+.chat-btn {
+  background: #007bff;
+  color: white;
+}
+
+.chat-btn:hover {
+  background: #0056b3;
+}
+
+.complete-btn {
+  background: #17a2b8;
+  color: white;
+}
+
+.complete-btn:hover {
+  background: #138496;
+}
+
+.rate-btn {
+  background: #ffc107;
+  color: #212529;
+}
+
+.rate-btn:hover {
+  background: #e0a800;
+}
+
+.rejected-text {
+  color: #dc3545;
+  font-size: 14px;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .swap-requests {
+    padding: 15px;
+  }
+  
+  .requests-tabs {
+    flex-direction: column;
+  }
+  
+  .tab-btn {
+    text-align: center;
+  }
+  
+  .request-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .swap-info {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .request-actions {
+    flex-direction: column;
+  }
+  
+  .request-actions button {
+    width: 100%;
+  }
+} 
