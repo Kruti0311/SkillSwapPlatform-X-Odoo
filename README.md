@@ -1,150 +1,146 @@
 # SkillSwap
 
-SkillSwap is a MERN stack web platform designed to facilitate collaborative learning and skill development through peer-to-peer guidance. The platform emphasizes reciprocal knowledge exchange, industrial-grade security features, and user-friendly interfaces to create a dynamic learning environment.
+A MERN stack web platform designed to facilitate collaborative learning and skill development through peer-to-peer guidance. The platform emphasizes reciprocal knowledge exchange, industrial-grade security features, and user-friendly interfaces to create a dynamic learning environment.
 
-## Motivation
+## 🚀 Features
 
-In today's fast-paced world, the acquisition of new skills is essential for personal and professional growth. However, traditional learning methods often lack interaction and dynamism. SkillSwap was created to address this gap by providing a platform where users can learn from each other's experiences in a collaborative and supportive community.
+- **Peer-to-Peer Learning**: Connect with others to exchange skills and knowledge
+- **Real-time Chat**: Built-in messaging system for direct communication
+- **User Authentication**: Secure login/register with JWT tokens
+- **Profile Management**: Create and manage your skill profile
+- **Skill Discovery**: Search and discover users with specific skills
+- **Rating System**: Rate and review learning sessions
+- **Responsive Design**: Works seamlessly across all devices
 
-## Features
+## 🛠️ Tech Stack
 
-- `Peers' Connection`: chat interface enable direct communication after connecting request and acceptance and hands-on guidance.
-- `Industrial Security Features`: Utilizes Google OAuth 2.0 authentication and JSON Web Tokens (JWT) verification for database security.
-- `Rating and Feedback System`: Users can rate and give feedback on guidance sessions, enhancing credibility and accountability.
-- `Responsive Layout`: Ensures optimal usability across various devices for an enhanced learning experience.
+### Frontend
+- React.js
+- React Router
+- React Bootstrap
+- Axios
+- Socket.io-client
+- React Toastify
 
-## Technologies Used
+### Backend
+- Node.js
+- Express.js
+- MongoDB (MongoDB Atlas)
+- Mongoose
+- Socket.io
+- JWT Authentication
+- Passport.js (Google OAuth)
+- Multer (File uploads)
+- Nodemailer
 
-- `Frontend`: React.js, React Router, Context API, React-Bootstrap, Axios, React-Toastify, Socket.io-client.
-- `Backend`: Node.js, Express.js, MongoDB (MongoDB Atlas), Mongoose, Socket.io, JSON Web Token (JWT), Passport.js.
-- `Deployment`: Docker and Docker Compose
-- `Tools`: Google Cloud Console (OAuth), MongoDB Compass, Postman, Docker, Docker Compose, VSCode, Git, GitHub.
-
-## Screenshots
-
-See the screenshots of the project in the screenshots folder.
-
-## Installation
-
-To run SkillSwap locally, follow these steps:
+## 📦 Installation
 
 ### Prerequisites
+- Node.js (v14 or higher)
+- MongoDB Atlas account
+- Google Cloud Console (for OAuth)
 
-1. For Google OAuth, know how to obtain the Google OAuth credentials and configure the redirect and allowed origins routes in the Google Cloud Console.
-2. Know how to obtain the connection link of the MongoDB Atlas database.
-3. For Nodemailer, you should know how to obtain the app password.
-4. Familiarity with working on Node.js and React projects is required.
+### Backend Setup
 
-### Clone the Repo
-
+1. Navigate to the backend directory:
 ```bash
-git clone https://github.com/HarshSharma20503/SkillSwap
-cd SkillSwap
+cd Backend
+npm install
+```
+
+2. Create a `.env` file in the Backend directory:
+```env
+PORT=8000
+CORS_ORIGIN=*
+MONGODB_URI=your_mongodb_connection_string
+CLOUDINARY_CLOUD_NAME=your_cloudinary_name
+CLOUDINARY_API_KEY=your_cloudinary_key
+CLOUDINARY_API_SECRET=your_cloudinary_secret
+GOOGLE_CLIENT_ID=your_google_client_id
+GOOGLE_CLIENT_SECRET=your_google_client_secret
+GOOGLE_CALLBACK_URL=http://localhost:8000/auth/google/callback
+JWT_SECRET=your_jwt_secret
+EMAIL_ID=your_email
+APP_PASSWORD=your_app_password
+```
+
+3. Start the backend server:
+```bash
+npm run dev
 ```
 
 ### Frontend Setup
 
+1. Navigate to the frontend directory:
 ```bash
-cd Frontend; npm install
+cd Frontend
+npm install
 ```
 
-Create .env file in the frontend and write the following:
-
+2. Create a `.env` file in the Frontend directory:
 ```env
-VITE_LOCALHOST = http://localhost:8000
-VITE_SERVER_URL = <your deployment link>
+VITE_LOCALHOST=http://localhost:8000
+VITE_SERVER_URL=your_deployment_url
 ```
 
-Run frontend
-
+3. Start the frontend development server:
 ```bash
 npm run dev
 ```
 
-The frontend will be running on `http://localhost:5173`
+## 🚀 Usage
 
-### Backend Setup
+1. Open your browser and go to `http://localhost:5173`
+2. Register a new account or login with existing credentials
+3. Create your profile with your skills and interests
+4. Discover other users and connect with them
+5. Start learning and sharing skills!
 
-```bash
-cd ../Backend; npm install
+## 📁 Project Structure
+
+```
+SkillSwap/
+├── Backend/
+│   ├── src/
+│   │   ├── config/          # Database and cloudinary config
+│   │   ├── controllers/     # API controllers
+│   │   ├── middlewares/     # JWT and multer middleware
+│   │   ├── models/          # MongoDB models
+│   │   ├── routes/          # API routes
+│   │   ├── utils/           # Utility functions
+│   │   ├── app.js           # Express app setup
+│   │   └── index.js         # Server entry point
+│   └── package.json
+├── Frontend/
+│   ├── src/
+│   │   ├── Components/      # Reusable components
+│   │   ├── Pages/           # Page components
+│   │   ├── util/            # Utility functions
+│   │   ├── App.jsx          # Main app component
+│   │   └── main.jsx         # React entry point
+│   └── package.json
+└── README.md
 ```
 
-Create .env file in the frontend and write the following:
+## 🤝 Contributing
 
-```env
-PORT = 8000
-CORS_ORIGIN = *
-MONGODB_URI = mongodb+srv://<your-username>:<your-password>@cluster0.<your-project>.mongodb.net
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-CLOUDINARY_CLOUD_NAME = <your-cloudinary-cloud-name>
-CLOUDINARY_API_KEY = <your-cloudinary-api-key>
-CLOUDINARY_API_SECRET = <your-cloudinary-api-key>
+## 📝 License
 
-GOOGLE_CLIENT_ID = <your-google-client-id>
-GOOGLE_CLIENT_SECRET = <your-google-client-secret>
-GOOGLE_CALLBACK_URL=http://localhost:8000/auth/google/callback
+This project is licensed under the ISC License.
 
-JWT_SECRET = <your-jwt-secret>
+## 👥 Authors
 
-EMAIL_ID = <your-email-id>
-APP_PASSWORD = <your-app-password>
-```
+- **Your Name** - *Initial work* - [YourGitHub](https://github.com/yourusername)
 
-Run backend
+## 🙏 Acknowledgments
 
-```bash
-npm run dev
-```
+- React.js community
+- MongoDB Atlas for database hosting
+- Google Cloud Console for OAuth integration
 
-The frontend will be running on `http://localhost:8000`
-
-### Install and Setup through Docker
-
-Create a docker-compose.yml file in SkillSwap folder. Write the following in it.
-
-```yml
-version: '3'
-
-services:
-  backend:
-    build:
-      context: .
-      dockerfile: Dockerfile.backend
-      args:
-        PORT: 8000
-        CORS_ORIGIN: "*"
-        MONGODB_URI: "mongodb+srv://<your-username>:<your-password>@cluster0.<your-project>.mongodb.net"
-        CLOUDINARY_CLOUD_NAME: "<your-cloudinary-cloud-name>"
-        CLOUDINARY_API_KEY: "<your-cloudinary-api-key>"
-        CLOUDINARY_API_SECRET: "<your-cloudinary-api-key>"
-        GOOGLE_CLIENT_ID: "<your-google-client-id>"
-        GOOGLE_CLIENT_SECRET: "<your-google-client-secret>"
-        GOOGLE_CALLBACK_URL: "http://localhost:8000/auth/google/callback"
-        JWT_SECRET: "<your-jwt-secret>"
-    ports:
-      - "8000:8000"
-
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile.frontend
-      args:
-        VITE_LOCALHOST: "http://localhost:8000"
-        VITE_SERVER_URL = "<your-deployment-link>"
-    ports:
-      - "5173:5173"
-```
-
-Run the docker compose file by using the following command which will run both frontend and backend.
-
-```bash
-sudo docker-compose up
-```
-
-To remove the docker images use the following command
-
-```bash
-sudo docker-compose down --rmi all
-```
-
-Now you can run the website on `http://localhost:5173`
